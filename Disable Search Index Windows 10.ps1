@@ -1,6 +1,7 @@
 # ============================================================
 # Desativar Indexação de Pesquisa (Windows Search)
 # Execute como Administrador
+#  Talvez seja necessário executar antes: Set-ExecutionPolicy Bypass -Scope Process -Force
 # ============================================================
 
 # Verifica se está rodando como Administrador
