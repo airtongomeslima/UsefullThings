@@ -203,6 +203,126 @@ Stop-Process -Name "explorer" -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 Start-Process "explorer.exe"
 
+
+# ============================================================
+# Otimização Avançada - Windows 10 (PC simples / HDD)
+# Desativa: Pesquisa Web, Background, Spotlight, SysMain,
+# Prefetch, Widgets, Histórico da Área de Transferência e Timeline
+# Execute como Administrador
+# ============================================================
+
+If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Host "ERRO: Execute este script como Administrador!" -ForegroundColor Red
+    pause
+    exit
+}
+
+Write-Host "`n=== Iniciando otimizações ===" -ForegroundColor Cyan
+
+# ------------------------------------------------------------
+# 1. Pesquisa Web (Bing) na busca do Iniciar
+# ------------------------------------------------------------
+Write-Host "[1/9] Desativando pesquisa web no Iniciar..." -ForegroundColor Green
+
+$searchPath = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search"
+If (!(Test-Path $searchPath)) { New-Item -Path $searchPath -Force | Out-Null }
+Set-ItemProperty -Path $searchPath -Name "BingSearchEnabled" -Value 0 -Type DWord -Force
+Set-ItemProperty -Path $searchPath -Name "CortanaConsent" -Value 0 -Type DWord -Force
+
+$searchPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"
+If (!(Test-Path $searchPolicy)) { New-Item -Path $searchPolicy -Force | Out-Null }
+Set-ItemProperty -Path $searchPolicy -Name "ConnectedSearchUseWeb" -Value 0 -Type DWord -Force
+Set-ItemProperty -Path $searchPolicy -Name "DisableWebSearch" -Value 1 -Type DWord -Force
+Set-ItemProperty -Path $searchPolicy -Name "AllowCortana" -Value 0 -Type DWord -Force
+
+# ------------------------------------------------------------
+# 2. Aplicativos em Segundo Plano
+# ------------------------------------------------------------
+Write-Host "[2/9] Desativando Background Apps..." -ForegroundColor Green
+
+$bgPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications"
+If (!(Test-Path $bgPath)) { New-Item -Path $bgPath -Force | Out-Null }
+Set-ItemProperty -Path $bgPath -Name "GlobalUserDisabled" -Value 1 -Type DWord -Force
+
+# ------------------------------------------------------------
+# 3. Windows Spotlight / Fundos da Internet
+# ------------------------------------------------------------
+Write-Host "[3/9] Desativando Spotlight e conteúdos online..." -ForegroundColor Green
+
+$cdm = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+If (Test-Path $cdm) {
+    $props = @(
+        "RotatingLockScreenEnabled","RotatingLockScreenOverlayEnabled",
+        "SubscribedContent-338387Enabled","SubscribedContent-338388Enabled",
+        "SubscribedContent-338389Enabled","SubscribedContent-338393Enabled",
+        "SubscribedContent-353694Enabled","SubscribedContent-353696Enabled",
+        "SoftLandingEnabled","SystemPaneSuggestionsEnabled",
+        "ContentDeliveryAllowed","SilentInstalledAppsEnabled"
+    )
+    foreach ($p in $props) {
+        Set-ItemProperty -Path $cdm -Name $p -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+    }
+}
+
+$cloud = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent"
+If (!(Test-Path $cloud)) { New-Item -Path $cloud -Force | Out-Null }
+Set-ItemProperty -Path $cloud -Name "DisableWindowsConsumerFeatures" -Value 1 -Type DWord -Force
+Set-ItemProperty -Path $cloud -Name "DisableWindowsSpotlightFeatures" -Value 1 -Type DWord -Force
+Set-ItemProperty -Path $cloud -Name "DisableSpotlightOnLockScreen" -Value 1 -Type DWord -Force
+
+# ------------------------------------------------------------
+# 4. SysMain (Superfetch) - Muito útil em HDD
+# ------------------------------------------------------------
+Write-Host "[4/9] Desativando SysMain (Superfetch)..." -ForegroundColor Green
+
+Stop-Service -Name "SysMain" -Force -ErrorAction SilentlyContinue
+Set-Service -Name "SysMain" -StartupType Disabled -ErrorAction SilentlyContinue
+
+# ------------------------------------------------------------
+# 5. Prefetch
+# ------------------------------------------------------------
+Write-Host "[5/9] Desativando Prefetch..." -ForegroundColor Green
+
+$prefetch = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters"
+If (Test-Path $prefetch) {
+    Set-ItemProperty -Path $prefetch -Name "EnablePrefetcher" -Value 0 -Type DWord -Force
+    Set-ItemProperty -Path $prefetch -Name "EnableSuperfetch" -Value 0 -Type DWord -Force
+}
+
+# ------------------------------------------------------------
+# 6. Widgets / Notícias e Interesses (barra de tarefas)
+# ------------------------------------------------------------
+Write-Host "[6/9] Desativando Notícias e Interesses / Widgets..." -ForegroundColor Green
+
+$feeds = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Feeds"
+If (!(Test-Path $feeds)) { New-Item -Path $feeds -Force | Out-Null }
+Set-ItemProperty -Path $feeds -Name "ShellFeedsTaskbarViewMode" -Value 2 -Type DWord -Force   # 2 = Oculto
+
+# Política extra
+$feedsPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Feeds"
+If (!(Test-Path $feedsPolicy)) { New-Item -Path $feedsPolicy -Force | Out-Null }
+Set-ItemProperty -Path $feedsPolicy -Name "EnableFeeds" -Value 0 -Type DWord -Force
+
+# ------------------------------------------------------------
+# 7. Histórico da Área de Transferência (Clipboard History)
+# ------------------------------------------------------------
+Write-Host "[7/9] Desativando Histórico da Área de Transferência..." -ForegroundColor Green
+
+$clipboard = "HKCU:\Software\Microsoft\Clipboard"
+If (!(Test-Path $clipboard)) { New-Item -Path $clipboard -Force | Out-Null }
+Set-ItemProperty -Path $clipboard -Name "EnableClipboardHistory" -Value 0 -Type DWord -Force
+
+# ------------------------------------------------------------
+# 8. Timeline (Linha do Tempo / Activity History)
+# ------------------------------------------------------------
+Write-Host "[8/9] Desativando Timeline (Linha do Tempo)..." -ForegroundColor Green
+
+$timeline = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
+If (!(Test-Path $timeline)) { New-Item -Path $timeline -Force | Out-Null }
+Set-ItemProperty -Path $timeline -Name "EnableActivityFeed" -Value 0 -Type DWord -Force
+Set-ItemProperty -Path $timeline -Name "PublishUserActivities" -Value 0 -Type DWord -Force
+Set-ItemProperty -Path $timeline -Name "UploadUserActivities" -Value 0 -Type DWord -Force
+
 # ------------------------------------------------------------
 # 8. Limpeza rápida de arquivos temporários
 # ------------------------------------------------------------
