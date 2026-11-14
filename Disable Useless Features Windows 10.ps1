@@ -2,6 +2,7 @@
 #  Script de Otimização Windows 10 - PC Simples / Fraco
 #  Desativa efeitos visuais, animações, OneDrive, Xbox e mais
 #  Execute como Administrador!
+#  Talvez seja necessário executar antes: Set-ExecutionPolicy Bypass -Scope Process -Force
 # ============================================================
 
 # Verifica se está rodando como Administrador
