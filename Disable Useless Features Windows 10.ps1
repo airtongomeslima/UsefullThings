@@ -4,7 +4,7 @@
 #  Execute como Administrador!
 #  Talvez seja necessário executar antes: Set-ExecutionPolicy Bypass -Scope Process -Force
 # ============================================================
-
+Set-ExecutionPolicy Bypass -Scope Process -Force
 # Verifica se está rodando como Administrador
 If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Host "ERRO: Execute este script como Administrador!" -ForegroundColor Red
@@ -295,14 +295,26 @@ If (Test-Path $prefetch) {
 # ------------------------------------------------------------
 Write-Host "[6/9] Desativando Notícias e Interesses / Widgets..." -ForegroundColor Green
 
-$feeds = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Feeds"
-If (!(Test-Path $feeds)) { New-Item -Path $feeds -Force | Out-Null }
-Set-ItemProperty -Path $feeds -Name "ShellFeedsTaskbarViewMode" -Value 2 -Type DWord -Force   # 2 = Oculto
-
-# Política extra
+# Método 1: Política (mais confiável e permanente)
 $feedsPolicy = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Feeds"
-If (!(Test-Path $feedsPolicy)) { New-Item -Path $feedsPolicy -Force | Out-Null }
+If (!(Test-Path $feedsPolicy)) { 
+    New-Item -Path $feedsPolicy -Force | Out-Null 
+}
 Set-ItemProperty -Path $feedsPolicy -Name "EnableFeeds" -Value 0 -Type DWord -Force
+
+# Método 2: Chave do usuário (usando reg.exe para evitar erro de permissão)
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Feeds" /v ShellFeedsTaskbarViewMode /t REG_DWORD /d 2 /f > $null 2>&1
+
+# Método 3: Outra chave alternativa (caso a anterior falhe)
+$feeds2 = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Feeds"
+If (!(Test-Path $feeds2)) { New-Item -Path $feeds2 -Force | Out-Null }
+try {
+    Set-ItemProperty -Path $feeds2 -Name "ShellFeedsTaskbarViewMode" -Value 2 -Type DWord -Force -ErrorAction Stop
+} catch {
+    # Se ainda der erro, ignora (a política do Método 1 já resolve na maioria dos casos)
+}
+
+Write-Host "   → Notícias e Interesses desativados." -ForegroundColor Gray
 
 # ------------------------------------------------------------
 # 7. Histórico da Área de Transferência (Clipboard History)

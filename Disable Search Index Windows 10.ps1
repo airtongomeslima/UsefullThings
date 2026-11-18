@@ -4,6 +4,8 @@
 #  Talvez seja necessário executar antes: Set-ExecutionPolicy Bypass -Scope Process -Force
 # ============================================================
 
+Set-ExecutionPolicy Bypass -Scope Process -Force
+
 # Verifica se está rodando como Administrador
 If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Host "ERRO: Execute este script como Administrador!" -ForegroundColor Red
